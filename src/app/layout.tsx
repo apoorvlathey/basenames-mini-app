@@ -1,6 +1,9 @@
 import { Poppins } from "next/font/google";
 import { getMetadata } from "@/lib/getMetadata";
 import Providers from "./components/Providers";
+import Script from "next/script";
+
+const GA_ID = "G-GRSTHJ7MXH";
 
 const _metadataInfo = {
   title: "Basenames | Register your .base.eth name for Warplet",
@@ -49,6 +52,22 @@ export default function RootLayout({
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1"
+        />
+        <Script
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}');
+          `,
+          }}
         />
       </head>
       <body>
