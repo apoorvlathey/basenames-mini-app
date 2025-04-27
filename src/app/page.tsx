@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Button,
@@ -15,7 +15,16 @@ import {
   Heading,
   InputGroup,
   InputRightAddon,
+  Image,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerOverlay,
+  useDisclosure,
+  Link,
+  Icon,
 } from "@chakra-ui/react";
+import confetti from "canvas-confetti";
 import { useAccount, useChainId, useWriteContract } from "wagmi";
 import { encodeFunctionData, namehash, parseEther } from "viem";
 import { base } from "wagmi/chains";
@@ -32,6 +41,16 @@ import { ConnectButton } from "@/components/ConnectButton";
 import { NetworkIndicator } from "@/components/NetworkIndicator";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { checkBasenameAvailability } from "@/lib/basename";
+import { sdk } from "@/lib/farcaster";
+
+const GitHubIcon = () => (
+  <Icon viewBox="0 0 24 24" boxSize={6} color="whiteAlpha.900">
+    <path
+      fill="currentColor"
+      d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+    />
+  </Icon>
+);
 
 export default function Home() {
   const [basename, setBasename] = useState("");
@@ -44,6 +63,14 @@ export default function Home() {
   const chainId = useChainId();
   const toast = useToast();
   const checkTimeout = useRef<NodeJS.Timeout>();
+  const [farcasterUsername, setFarcasterUsername] = useState<string | null>(
+    null
+  );
+  const {
+    isOpen: isSuccessOpen,
+    onOpen: onSuccessOpen,
+    onClose: onSuccessClose,
+  } = useDisclosure();
 
   const isMainnet = chainId === base.id;
   const suffix = isMainnet ? ".base.eth" : ".basetest.eth";
@@ -57,7 +84,7 @@ export default function Home() {
   const { writeContractAsync } = useWriteContract();
 
   const handleBasenameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
+    let value = e.target.value.trim();
 
     if (value.endsWith(".base.eth")) {
       value = value.replace(".base.eth", "");
@@ -101,6 +128,42 @@ export default function Home() {
       }
     };
   }, [basename, isMainnet]);
+
+  useEffect(() => {
+    const initFarcaster = async () => {
+      try {
+        const context = await sdk.context;
+        if (context?.user?.username) {
+          setFarcasterUsername(context.user.username);
+          // Check if username.base.eth is available
+          const result = await checkBasenameAvailability(
+            context.user.username,
+            isMainnet
+          );
+          if (result.isAvailable) {
+            setBasename(context.user.username);
+          }
+          setAvailability({
+            isAvailable: result.isAvailable,
+            error: result.error,
+          });
+        }
+      } catch (error) {
+        console.error("Error getting Farcaster user:", error);
+      }
+
+      // Always call ready() to hide the splash screen, regardless of Farcaster user status
+      try {
+        await sdk.actions.ready();
+      } catch (error) {
+        console.error("Error calling ready:", error);
+      }
+    };
+
+    if (isConnected) {
+      initFarcaster();
+    }
+  }, [isConnected, isMainnet]);
 
   const handleRegister = async () => {
     if (!address || !isConnected) {
@@ -150,14 +213,14 @@ export default function Home() {
         value: parseEther("0.002"),
       });
 
-      toast({
-        title: "Success",
-        description: `Successfully registered basename ${fullBasename}`,
-        status: "success",
-        duration: 5000,
-        position: "bottom-right",
-        isClosable: true,
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
       });
+
+      onSuccessOpen();
     } catch (error) {
       // Handle viem errors with shortMessage
       const errorMessage =
@@ -177,6 +240,49 @@ export default function Home() {
       });
     }
   };
+
+  const handleShare = async () => {
+    if (farcasterUsername) {
+      try {
+        await sdk.actions.composeCast({
+          text: `I registered ${basename}${suffix} for my Warplet! 🎉\n\nClaim your own here: https://basenames.apoorv.xyz\n\nBuilt by @apoorvlathey`,
+        });
+      } catch (error) {
+        console.error("Error sharing:", error);
+      }
+    }
+  };
+
+  // Test function to simulate success
+  const handleTestSuccess = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+    });
+    onSuccessOpen();
+  };
+
+  const handleClearBasename = () => {
+    setBasename("");
+    setAvailability(null);
+  };
+
+  const handleProfileClick = useCallback(async () => {
+    try {
+      if (farcasterUsername) {
+        // If in Farcaster mini-app
+        await sdk.actions.viewProfile({
+          fid: 14241,
+        });
+      } else {
+        // If not in Farcaster mini-app, open Warpcast profile in new tab
+        window.open("https://warpcast.com/apoorvlathey", "_blank");
+      }
+    } catch (error) {
+      console.error("Error handling profile click:", error);
+    }
+  }, [farcasterUsername]);
 
   return (
     <Box minH="100vh" bg="brand.primary" position="relative" overflow="hidden">
@@ -223,6 +329,7 @@ export default function Home() {
         <VStack spacing={{ base: 6, md: 8 }} align="center">
           <VStack spacing={{ base: 3, md: 4 }} textAlign="center">
             <Heading
+              mt={8}
               as="h1"
               fontSize={{ base: "4xl", md: "5xl" }}
               fontWeight="bold"
@@ -239,11 +346,12 @@ export default function Home() {
               lineHeight={{ base: "1.5", md: "tall" }}
               px={{ base: 4, md: 0 }}
             >
-              Register basename for your Warplet
+              Register Basename for your Warplet
             </Text>
           </VStack>
 
           <Box
+            mt={8}
             bg="white"
             rounded="2xl"
             shadow="xl"
@@ -254,9 +362,28 @@ export default function Home() {
           >
             <VStack spacing={6}>
               <FormControl>
-                <FormLabel fontSize="md" color="gray.700" fontWeight="medium">
-                  Search for a name
-                </FormLabel>
+                <HStack justify="space-between" align="center" mb={2}>
+                  <FormLabel
+                    fontSize="md"
+                    color="gray.700"
+                    fontWeight="medium"
+                    mb={0}
+                  >
+                    Search for a name
+                  </FormLabel>
+                  {basename && (
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      onClick={handleClearBasename}
+                      color="gray.500"
+                      _hover={{ color: "gray.700" }}
+                      aria-label="Clear input"
+                    >
+                      clear
+                    </Button>
+                  )}
+                </HStack>
                 <InputGroup size="lg">
                   <Input
                     placeholder="Enter basename"
@@ -288,18 +415,54 @@ export default function Home() {
                   </Text>
                 )}
                 {availability && !isChecking && (
-                  <Text
-                    color={availability.isAvailable ? "green.500" : "red.500"}
-                    mt={2}
-                    fontSize="sm"
-                    fontWeight="medium"
-                  >
-                    {availability.error
-                      ? availability.error
-                      : availability.isAvailable
-                      ? "✓ Basename is available!"
-                      : "✗ Basename is not available"}
-                  </Text>
+                  <>
+                    {availability.error ? (
+                      <Text
+                        color="red.500"
+                        mt={2}
+                        fontSize="sm"
+                        fontWeight="medium"
+                      >
+                        {availability.error}
+                      </Text>
+                    ) : (
+                      <>
+                        {!availability.isAvailable &&
+                          farcasterUsername === basename && (
+                            <Text
+                              color="blue.500"
+                              mt={2}
+                              fontSize="sm"
+                              fontWeight="medium"
+                            >
+                              Note: {basename}
+                              {suffix} is already taken
+                            </Text>
+                          )}
+                        {!availability.isAvailable &&
+                          farcasterUsername !== basename && (
+                            <Text
+                              color="red.500"
+                              mt={2}
+                              fontSize="sm"
+                              fontWeight="medium"
+                            >
+                              ✗ Basename is not available
+                            </Text>
+                          )}
+                        {availability.isAvailable && (
+                          <Text
+                            color="green.500"
+                            mt={2}
+                            fontSize="sm"
+                            fontWeight="medium"
+                          >
+                            ✓ Basename is available!
+                          </Text>
+                        )}
+                      </>
+                    )}
+                  </>
                 )}
               </FormControl>
 
@@ -331,7 +494,107 @@ export default function Home() {
             </VStack>
           </Box>
         </VStack>
+
+        {/* Footer */}
+        <Box
+          as="footer"
+          mt={8}
+          textAlign="center"
+          cursor="pointer"
+          onClick={handleProfileClick}
+          _hover={{ opacity: 0.8 }}
+          transition="opacity 0.2s"
+        >
+          <HStack
+            spacing={2}
+            justify="center"
+            color="whiteAlpha.900"
+            fontSize="sm"
+          >
+            <Text>by</Text>
+            <Image
+              src="/apoorvlathey.avif"
+              alt="Apoorv Lathey"
+              width={5}
+              height={5}
+              rounded="full"
+            />
+            <Text>@apoorvlathey</Text>
+          </HStack>
+        </Box>
       </Container>
+
+      {/* Add test button in development */}
+      {/* {process.env.NODE_ENV === "development" && (
+        <Button
+          position="fixed"
+          bottom={4}
+          right={4}
+          onClick={handleTestSuccess}
+          colorScheme="purple"
+          zIndex={100}
+        >
+          Test Success
+        </Button>
+      )} */}
+      <Link
+        position="fixed"
+        bottom={4}
+        right={4}
+        zIndex={100}
+        href="https://github.com/apoorvlathey/basenames-mini-app"
+        isExternal
+      >
+        <GitHubIcon />
+      </Link>
+
+      {/* Success Drawer */}
+      <Drawer
+        isOpen={isSuccessOpen}
+        placement="bottom"
+        onClose={onSuccessClose}
+      >
+        <DrawerOverlay />
+        <DrawerContent
+          borderTopRadius="2xl"
+          bg="white"
+          pb="env(safe-area-inset-bottom)"
+        >
+          <DrawerBody py={6}>
+            <VStack spacing={4}>
+              <Text
+                fontSize="xl"
+                fontWeight="bold"
+                color="gray.800"
+                textAlign="center"
+              >
+                🎉 Successfully registered {basename}
+                {suffix}!
+              </Text>
+              {farcasterUsername && (
+                <Button
+                  colorScheme="purple"
+                  width="full"
+                  onClick={handleShare}
+                  size="lg"
+                  rounded="xl"
+                >
+                  Share with Followers
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                width="full"
+                onClick={onSuccessClose}
+                size="lg"
+                rounded="xl"
+              >
+                Close
+              </Button>
+            </VStack>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </Box>
   );
 }

@@ -4,8 +4,9 @@ import { ChakraProvider } from "@/providers/ChakraProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "@/config/wagmi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Poppins } from "next/font/google";
+import { sdk } from "@/lib/farcaster";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -19,6 +20,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [queryClient] = useState(() => new QueryClient());
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await sdk.actions.ready();
+      } catch (error) {
+        console.error("Error initializing Farcaster:", error);
+      }
+    };
+
+    init();
+  }, []);
 
   return (
     <html lang="en" className={poppins.className}>
