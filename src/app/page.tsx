@@ -143,9 +143,11 @@ export default function Home() {
             context.user.username,
             isMainnet
           );
+          // Only set basename if available
           if (result.isAvailable) {
             setBasename(context.user.username);
           }
+          // Show availability status even if not setting the basename
           setAvailability({
             isAvailable: result.isAvailable,
             error: result.error,
@@ -434,29 +436,22 @@ export default function Home() {
                       </Text>
                     ) : (
                       <>
-                        {!availability.isAvailable &&
-                          farcasterUsername === basename && (
-                            <Text
-                              color="blue.500"
-                              mt={2}
-                              fontSize="sm"
-                              fontWeight="medium"
-                            >
-                              Note: {basename}
-                              {suffix} is already taken
-                            </Text>
-                          )}
-                        {!availability.isAvailable &&
-                          farcasterUsername !== basename && (
-                            <Text
-                              color="red.500"
-                              mt={2}
-                              fontSize="sm"
-                              fontWeight="medium"
-                            >
-                              ✗ Basename is not available
-                            </Text>
-                          )}
+                        {!availability.isAvailable && (
+                          <Text
+                            color={
+                              farcasterUsername && basename === ""
+                                ? "blue.500"
+                                : "red.500"
+                            }
+                            mt={2}
+                            fontSize="sm"
+                            fontWeight="medium"
+                          >
+                            {farcasterUsername && basename === ""
+                              ? `Note: ${farcasterUsername}${suffix} is already taken`
+                              : "✗ Basename is not available"}
+                          </Text>
+                        )}
                         {availability.isAvailable && (
                           <Text
                             color="green.500"
