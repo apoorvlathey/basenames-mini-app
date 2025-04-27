@@ -245,7 +245,7 @@ export default function Home() {
     if (farcasterUsername) {
       try {
         await sdk.actions.composeCast({
-          text: `I registered ${basename}${suffix} for my Warplet! 🎉\n\nClaim your own here: https://basenames.apoorv.xyz\n\nBuilt by @apoorvlathey`,
+          text: `I registered ${basename}${suffix} for my Warplet! 🎉\n\nClaim your own here: https://basenames.apoorv.xyz`,
         });
       } catch (error) {
         console.error("Error sharing:", error);
