@@ -1,13 +1,21 @@
-# Basename Mini-App
+# Basenames for Warplet Mini-App
+
+<div align="center">
+  
+**🔗 [basenames.apoorv.xyz](https://basenames.apoorv.xyz)**
+
+![Basenames Mini-App](public/opengraph-image.png)
+
+</div>
 
 A mobile-first mini-app for registering and setting basenames for Farcaster wallets on Base network.
 
 ## Features
 
 - Register basenames on Base Mainnet and Base Sepolia
-- Mobile-first design
-- Dark mode by default
-- Wallet integration with wagmi
+- Mobile-first, responsive design
+- Real-time basename availability checking
+- Mini-app support for Farcaster
 
 ## Getting Started
 
@@ -29,20 +37,35 @@ pnpm dev
 
 1. Connect your wallet (Base Mainnet or Base Sepolia)
 2. Enter your desired basename
-3. Click "Register Basename" to register your basename
-4. Confirm the transaction in your wallet
-
-## Technical Details
-
-- Built with Next.js 14 and TypeScript
-- Uses Chakra UI for styling
-- Integrates with wagmi for wallet connections
-- Uses viem for Ethereum interactions
+3. The app will automatically check if the basename is available
+4. Click "Register Basename" to register your basename
+5. Confirm the transaction in your wallet
+6. Enjoy the confetti celebration upon successful registration!
 
 ## Networks Supported
 
 - Base Mainnet (Chain ID: 8453)
+  - Basenames end with `.base.eth`
 - Base Sepolia (Chain ID: 84532)
+  - Basenames end with `.basetest.eth`
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js app router pages
+├── components/       # Reusable UI components
+├── config/          # Configuration files
+├── lib/             # Utility functions and helpers
+└── providers/       # React context providers
+```
+
+## Available Scripts
+
+- `pnpm dev` - Start development server
+- `pnpm build` - Build production bundle
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
 
 ## License
 
