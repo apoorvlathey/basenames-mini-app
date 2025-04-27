@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE0MjQxLCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4OTRmRDU1RjlkRWJmRTNBMjgwNTM4MjMzNDEyM0ExNUZjMmVBYjI3NSJ9",
+    "payload": "eyJkb21haW4iOiJiYXNlbmFtZXMuYXBvb3J2Lnh5eiJ9",
+    "signature": "MHg0YjE5OTk1OTI0ZTVlMjdjMzI2YzQwNmQ2YzJjZmIyOTkwYzU2N2I4NjU0NmRlZGIxYjNhYjczYWY3OGQyNjc1NTU4YjhiNzhiYTZmNDk1YTZlMWM2YzllNjZjZjMxZTI2YmJlMDQ5MjYwNGU2ODUyNDc5MzBhNzllOWU0ZDY4MTFj"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Basenames",
+    "iconUrl": "https://basenames.apoorv.xyz/logo.png",
+    "homeUrl": "https://basenames.apoorv.xyz",
+    "imageUrl": "https://basenames.apoorv.xyz/opengraph-image.png",
+    "buttonTitle": "Register Basename",
+    "splashImageUrl": "https://basenames.apoorv.xyz/logo.png",
+    "splashBackgroundColor": "#2563EB",
+    "webhookUrl": "https://basenames.apoorv.xyz/api/webhook"
+  }
+}
