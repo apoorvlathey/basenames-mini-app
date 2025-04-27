@@ -138,14 +138,20 @@ export default function Home() {
         const context = await sdk.context;
         if (context?.user?.username) {
           setFarcasterUsername(context.user.username);
+
+          // Remove .eth suffix if present in the Farcaster username
+          const cleanUsername = context.user.username.endsWith(".eth")
+            ? context.user.username.slice(0, -4)
+            : context.user.username;
+
           // Check if username.base.eth is available
           const result = await checkBasenameAvailability(
-            context.user.username,
+            cleanUsername,
             isMainnet
           );
           // Only set basename if available
           if (result.isAvailable) {
-            setBasename(context.user.username);
+            setBasename(cleanUsername);
           }
           // Show availability status even if not setting the basename
           setAvailability({
