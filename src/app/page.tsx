@@ -26,6 +26,8 @@ import {
 } from "@chakra-ui/react";
 import confetti from "canvas-confetti";
 import { useAccount, useChainId, useWriteContract } from "wagmi";
+import { config } from "@/config/wagmi";
+import { waitForTransactionReceipt } from "wagmi/actions";
 import { encodeFunctionData, namehash, parseEther } from "viem";
 import { base } from "wagmi/chains";
 import {
@@ -55,6 +57,7 @@ const GitHubIcon = () => (
 export default function Home() {
   const [basename, setBasename] = useState("");
   const [isChecking, setIsChecking] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [availability, setAvailability] = useState<{
     isAvailable: boolean;
     error: string | null;
@@ -179,6 +182,7 @@ export default function Home() {
     }
 
     try {
+      setIsRegistering(true);
       const fullBasename = basename.endsWith(suffix)
         ? basename
         : basename + suffix;
@@ -196,7 +200,7 @@ export default function Home() {
         args: [nameHash, fullBasename],
       });
 
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         abi: REGISTRAR_ABI,
         address: registrarAddress,
         functionName: "register",
@@ -212,6 +216,7 @@ export default function Home() {
         ],
         value: parseEther("0.002"),
       });
+      await waitForTransactionReceipt(config, { hash });
 
       // Trigger confetti
       confetti({
@@ -238,6 +243,8 @@ export default function Home() {
         position: "bottom-right",
         isClosable: true,
       });
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -475,8 +482,11 @@ export default function Home() {
                   !isConnected ||
                   !basename ||
                   (availability && !availability.isAvailable) ||
-                  isChecking
+                  isChecking ||
+                  isRegistering
                 }
+                isLoading={isRegistering}
+                loadingText="Registering..."
                 rounded="xl"
                 fontSize="md"
                 py={6}
