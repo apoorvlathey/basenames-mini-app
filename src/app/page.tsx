@@ -96,11 +96,26 @@ export default function Home() {
     }
 
     setBasename(value);
-    setAvailability(null);
+
+    // Check for periods in the basename
+    if (value.includes(".")) {
+      setAvailability({
+        isAvailable: false,
+        error: "Basename cannot contain periods (.)",
+      });
+    } else {
+      setAvailability(null);
+    }
   };
 
   useEffect(() => {
     if (basename) {
+      // Skip availability check if the basename contains a period
+      if (basename.includes(".")) {
+        setIsChecking(false);
+        return;
+      }
+
       setIsChecking(true);
 
       if (checkTimeout.current) {
